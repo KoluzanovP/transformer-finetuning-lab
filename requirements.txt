@@ -1,0 +1,23 @@
+# Core deep learning stack
+torch==2.2.2
+transformers==4.39.3
+datasets==2.18.0
+peft==0.10.0
+
+# Classic ML / data
+scikit-learn==1.4.2
+numpy==1.26.4
+pandas==2.2.2
+
+# Visualization
+matplotlib==3.8.4
+umap-learn==0.5.6
+tensorboard==2.16.2
+
+# Serving
+fastapi==0.110.1
+uvicorn[standard]==0.29.0
+pydantic==2.6.4
+
+# Utilities
+python-dotenv==1.0.1

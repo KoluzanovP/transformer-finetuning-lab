@@ -1,0 +1,39 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment variables
+.env
+
+# Training artifacts and logs
+artifacts/
+runs/
+checkpoints/
+*.ckpt
+*.pt
+*.bin
+*.safetensors
+
+# Hugging Face / datasets cache
+.cache/
+wandb/
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Plots
+*.png
+*.jpg
+!docs/**/*.png
