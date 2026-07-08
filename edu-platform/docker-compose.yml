@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16
+    container_name: edu_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: edu
+      POSTGRES_PASSWORD: edu
+      POSTGRES_DB: edu_platform
+    ports:
+      - "5432:5432"
+    volumes:
+      - edu_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U edu -d edu_platform"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  edu_pg_data:

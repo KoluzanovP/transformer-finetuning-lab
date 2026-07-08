@@ -1,0 +1,23 @@
+{
+  "name": "edu-platform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Образовательная платформа: кабинеты автора, учителя, наставника, ученика и родителя; курсы, уроки (notebook-редактор), домашки, созвоны, аналитика и логи.",
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm -r --parallel dev",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "db:up": "docker compose up -d db",
+    "db:down": "docker compose down",
+    "api": "pnpm --filter @edu/api",
+    "web": "pnpm --filter @edu/web"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}
