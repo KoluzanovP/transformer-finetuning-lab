@@ -1,0 +1,16 @@
+{
+  "name": "EduPlatform — образовательная платформа",
+  "short_name": "EduPlatform",
+  "description": "Курсы, уроки, домашки, созвоны и прогресс. Математика с нуля до ЕГЭ.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f8fafc",
+  "theme_color": "#4f46e5",
+  "lang": "ru",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon-maskable.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

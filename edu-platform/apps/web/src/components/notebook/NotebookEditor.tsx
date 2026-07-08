@@ -8,6 +8,7 @@ import type {
   QuizBlock,
 } from "@edu/shared";
 import { uploadFile } from "@/lib/api";
+import { NotebookViewer } from "./NotebookViewer";
 
 /** Кнопка загрузки файла на сервер (LOCAL/S3) с проставлением URL. */
 function UploadButton({ kind, onUploaded }: { kind: "IMAGE" | "VIDEO" | "AUDIO"; onUploaded: (url: string) => void }) {
@@ -101,6 +102,7 @@ export function NotebookEditor({
   onChange: (doc: LessonDocument) => void;
 }) {
   const blocks = value.blocks;
+  const [mode, setMode] = useState<"edit" | "split" | "preview">("edit");
 
   const update = (next: LessonBlock[]) => onChange({ version: 1, blocks: next });
   const add = (type: BlockType) => update([...blocks, makeBlock(type)]);
@@ -116,7 +118,7 @@ export function NotebookEditor({
     update(next);
   };
 
-  return (
+  const editorPanel = (
     <div className="space-y-3">
       {blocks.map((b, i) => (
         <div key={b.id} className="rounded-xl border border-slate-200 bg-white">
@@ -142,6 +144,43 @@ export function NotebookEditor({
           </button>
         ))}
       </div>
+    </div>
+  );
+
+  const previewPanel = (
+    <div className="rounded-xl border border-slate-200 bg-white p-4">
+      <NotebookViewer doc={value} />
+    </div>
+  );
+
+  const MODES: { key: typeof mode; label: string }[] = [
+    { key: "edit", label: "Редактор" },
+    { key: "split", label: "Разделить" },
+    { key: "preview", label: "Предпросмотр" },
+  ];
+
+  return (
+    <div className="space-y-3">
+      <div className="flex gap-1 rounded-lg bg-slate-100 p-1 text-sm">
+        {MODES.map((m) => (
+          <button
+            key={m.key}
+            onClick={() => setMode(m.key)}
+            className={`flex-1 rounded-md px-3 py-1.5 ${mode === m.key ? "bg-white font-medium text-brand-700 shadow-sm" : "text-slate-500"}`}
+          >
+            {m.label}
+          </button>
+        ))}
+      </div>
+
+      {mode === "edit" && editorPanel}
+      {mode === "preview" && previewPanel}
+      {mode === "split" && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          {editorPanel}
+          <div className="lg:sticky lg:top-20 lg:self-start">{previewPanel}</div>
+        </div>
+      )}
     </div>
   );
 }
