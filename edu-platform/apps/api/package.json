@@ -13,6 +13,7 @@
     "prisma:push": "prisma db push",
     "seed": "ts-node prisma/seed.ts",
     "seed:math": "ts-node prisma/seed-math.ts",
+    "seed:ege": "ts-node prisma/seed-math-ege.ts",
     "test": "jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json --runInBand"
   },
