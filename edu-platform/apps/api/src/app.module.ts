@@ -23,6 +23,7 @@ import { AnalyticsModule } from "./analytics/analytics.module";
 import { NotificationsModule } from "./notifications/notifications.module";
 import { HealthModule } from "./health/health.module";
 import { BootstrapModule } from "./bootstrap/bootstrap.module";
+import { AdminModule } from "./admin/admin.module";
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { BootstrapModule } from "./bootstrap/bootstrap.module";
     AnalyticsModule,
     HealthModule,
     BootstrapModule,
+    AdminModule,
   ],
   providers: [
     // Глобально: rate-limit → аутентификация (JWT) → проверка ролей.

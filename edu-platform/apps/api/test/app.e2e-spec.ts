@@ -420,6 +420,20 @@ describe("Образовательная платформа (e2e)", () => {
     expect(half.body.scorePercent).toBe(50);
   });
 
+  it("автор загружает готовые курсы одной кнопкой", async () => {
+    const res = await http()
+      .post("/api/admin/seed-math")
+      .set("Authorization", `Bearer ${t.author}`)
+      .expect(201);
+    expect(res.body.courses).toHaveLength(2);
+    expect(res.body.courses[0].lessons).toBeGreaterThanOrEqual(24);
+    expect(res.body.courses[1].homeworks).toBeGreaterThanOrEqual(8);
+  });
+
+  it("ученик не может загрузить курсы (403)", async () => {
+    await http().post("/api/admin/seed-math").set("Authorization", `Bearer ${t.student}`).expect(403);
+  });
+
   it("родитель не может открыть сводку автора (403)", async () => {
     await http()
       .get("/api/analytics/overview")

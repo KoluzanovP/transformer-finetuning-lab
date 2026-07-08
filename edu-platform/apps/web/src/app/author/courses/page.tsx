@@ -30,6 +30,23 @@ export default function AuthorCoursesPage() {
   const [callsPerStudent, setCallsPerStudent] = useState(8);
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [seedBusy, setSeedBusy] = useState(false);
+  const [seedMsg, setSeedMsg] = useState<string | null>(null);
+
+  const loadReadyCourses = async () => {
+    setSeedBusy(true);
+    setSeedMsg(null);
+    try {
+      const res = await api.post<{ courses: { title: string; lessons: number; homeworks: number }[] }>("/admin/seed-math");
+      const total = res.courses.reduce((s, c) => s + c.lessons, 0);
+      setSeedMsg(`Готово: добавлено ${res.courses.length} курса, уроков — ${total}.`);
+      await reload();
+    } catch (err) {
+      setSeedMsg(err instanceof ApiError ? err.message : "Не удалось загрузить курсы");
+    } finally {
+      setSeedBusy(false);
+    }
+  };
 
   const create = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,6 +81,17 @@ export default function AuthorCoursesPage() {
   return (
     <DashboardShell>
       <h1 className="mb-6 text-2xl font-bold text-slate-900">Курсы</h1>
+
+      <div className="card mb-6 flex flex-col gap-3 border-brand-200 bg-brand-50/40 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="font-semibold text-slate-900">Готовые курсы математики</p>
+          <p className="text-sm text-slate-500">«Математика: с нуля до ЕГЭ» и «ЕГЭ: пробные варианты» — в один тап.</p>
+          {seedMsg && <p className="mt-1 text-sm text-brand-700">{seedMsg}</p>}
+        </div>
+        <button className="btn-primary shrink-0" disabled={seedBusy} onClick={loadReadyCourses}>
+          {seedBusy ? "Загрузка…" : "Загрузить готовые курсы"}
+        </button>
+      </div>
 
       <form onSubmit={create} className="card mb-6 space-y-4">
         <h2 className="text-lg font-semibold text-slate-900">Новый курс</h2>
