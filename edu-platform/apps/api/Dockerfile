@@ -1,8 +1,7 @@
 # API (NestJS + Prisma). Контекст сборки — корень монорепо (edu-platform/).
-FROM node:20-bookworm-slim AS base
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends openssl ca-certificates \
-  && rm -rf /var/lib/apt/lists/*
+# Полный образ node:20 (bookworm) уже содержит OpenSSL/ca-certificates, поэтому
+# apt-get не нужен — важно для билд-окружений без доступа к apt-зеркалам.
+FROM node:20 AS base
 RUN corepack enable
 WORKDIR /app
 
