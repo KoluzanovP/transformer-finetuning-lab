@@ -60,8 +60,20 @@ export class TokensService {
   ): Promise<IssuedTokens> {
     const hash = this.sha256(rawRefresh);
     const stored = await this.prisma.refreshToken.findUnique({ where: { tokenHash: hash } });
-    if (!stored || stored.revokedAt || stored.expiresAt < new Date()) {
+    if (!stored) {
       throw new UnauthorizedException("Недействительный refresh-токен");
+    }
+    // Обнаружение повторного использования: предъявлен уже отозванный (ротированный)
+    // токен — вероятная кража. Отзываем все активные сессии пользователя.
+    if (stored.revokedAt) {
+      await this.prisma.refreshToken.updateMany({
+        where: { userId: stored.userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+      throw new UnauthorizedException("Обнаружено повторное использование токена — сессии сброшены");
+    }
+    if (stored.expiresAt < new Date()) {
+      throw new UnauthorizedException("Срок действия refresh-токена истёк");
     }
     const user = await lookupUser(stored.userId);
     if (!user) throw new UnauthorizedException("Пользователь не найден");

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ROLE_HOME, ROLE_LABELS_RU, ALL_ROLES, type Role } from "@edu/shared";
+import { ROLE_HOME, ROLE_LABELS_RU, SELF_SIGNUP_ROLES, type Role } from "@edu/shared";
 import { useAuth } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
 
@@ -54,10 +54,11 @@ export default function RegisterPage() {
           <div>
             <label className="label">Роль</label>
             <select className="input" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as Role })}>
-              {ALL_ROLES.map((r) => (
+              {SELF_SIGNUP_ROLES.map((r) => (
                 <option key={r} value={r}>{ROLE_LABELS_RU[r]}</option>
               ))}
             </select>
+            <p className="mt-1 text-xs text-slate-400">Учителей и наставников добавляет автор платформы.</p>
           </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
           <button className="btn-primary w-full" disabled={busy}>{busy ? "…" : "Создать аккаунт"}</button>

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -63,8 +64,23 @@ export class MediaService {
     });
   }
 
+  /** Проверка соответствия MIME-типа заявленному виду медиа. */
+  private assertMime(kind: MediaKind, mimetype: string): void {
+    const prefix: Record<MediaKind, string | null> = {
+      IMAGE: "image/",
+      VIDEO: "video/",
+      AUDIO: "audio/",
+      FILE: null, // произвольный тип
+    };
+    const need = prefix[kind];
+    if (need && !mimetype.startsWith(need)) {
+      throw new BadRequestException(`Ожидался файл типа ${kind}, получен ${mimetype || "неизвестно"}`);
+    }
+  }
+
   /** Реальная загрузка файла на локальный диск (driver=LOCAL). */
   async saveLocalFile(uploaderId: string, kind: MediaKind, file: UploadedFile): Promise<MediaAsset> {
+    this.assertMime(kind, file.mimetype);
     const storageKey = this.key(uploaderId, file.originalname);
     const absPath = join(UPLOADS_DIR, storageKey);
     await fs.mkdir(join(absPath, ".."), { recursive: true });

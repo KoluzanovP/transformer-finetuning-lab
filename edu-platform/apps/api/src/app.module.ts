@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { APP_GUARD } from "@nestjs/core";
+import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import configuration from "./config/configuration";
 import { PrismaModule } from "./common/prisma/prisma.module";
 import { AuditModule } from "./common/audit/audit.module";
@@ -24,6 +25,11 @@ import { NotificationsModule } from "./notifications/notifications.module";
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, load: [configuration] }),
+    // Rate-limiting: 200 запросов/мин на IP (в тестах отключено).
+    ThrottlerModule.forRoot({
+      throttlers: [{ ttl: 60_000, limit: 200 }],
+      skipIf: () => process.env.NODE_ENV === "test",
+    }),
     PrismaModule,
     AuditModule,
     NotificationsModule,
@@ -42,7 +48,8 @@ import { NotificationsModule } from "./notifications/notifications.module";
     AnalyticsModule,
   ],
   providers: [
-    // Глобально: сначала аутентификация (JWT), затем проверка ролей.
+    // Глобально: rate-limit → аутентификация (JWT) → проверка ролей.
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
   ],

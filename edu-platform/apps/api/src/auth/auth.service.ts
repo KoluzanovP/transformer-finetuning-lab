@@ -4,7 +4,7 @@ import type { User } from "@prisma/client";
 import { UsersService } from "../users/users.service";
 import { TokensService } from "./tokens.service";
 import { AuditService } from "../common/audit/audit.service";
-import type { RegisterDto } from "./dto/register.dto";
+import { SELF_SIGNUP_ROLES, type RegisterDto } from "./dto/register.dto";
 
 @Injectable()
 export class AuthService {
@@ -24,12 +24,14 @@ export class AuthService {
   }
 
   async register(dto: RegisterDto, ip?: string): Promise<AuthResponse> {
+    // Защита от эскалации: даже если валидация обойдена, роль ограничена.
+    const role = dto.role && SELF_SIGNUP_ROLES.includes(dto.role) ? dto.role : Role.STUDENT;
     const user = await this.users.create({
       email: dto.email,
       password: dto.password,
       firstName: dto.firstName,
       lastName: dto.lastName,
-      roles: [dto.role ?? Role.STUDENT],
+      roles: [role],
     });
     await this.audit.log({ actorId: user.id, action: "auth.register", entityType: "User", entityId: user.id, ip });
     return this.buildResponse(user);

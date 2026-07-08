@@ -30,6 +30,8 @@ class CreateSlotDto {
   @IsISO8601() startsAt!: string;
   @IsOptional() @IsInt() @Min(5) durationMinutes?: number;
   @IsOptional() @IsString() courseId?: string;
+  /** Только для автора: создать слот для указанного преподавателя. */
+  @IsOptional() @IsString() teacherId?: string;
 }
 
 class BookDto {
@@ -70,7 +72,7 @@ export class SchedulingController {
   /** Создание слота: автор — для любого преподавателя, учитель — для себя. */
   @Post("calls")
   @Roles(Role.AUTHOR, Role.TEACHER)
-  async createSlot(@Body() dto: CreateSlotDto & { teacherId?: string }, @CurrentUser() user: AuthUser) {
+  async createSlot(@Body() dto: CreateSlotDto, @CurrentUser() user: AuthUser) {
     const teacherId = user.roles.includes(Role.AUTHOR) && dto.teacherId ? dto.teacherId : user.id;
     const call = await this.scheduling.createSlot(teacherId, dto);
     await this.audit.log({ actorId: user.id, action: "call.createSlot", entityType: "Call", entityId: call.id });

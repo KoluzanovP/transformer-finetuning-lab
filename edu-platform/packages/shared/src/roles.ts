@@ -21,6 +21,12 @@ export const ALL_ROLES: Role[] = Object.values(Role);
 /** Роли преподавательского состава, для которых автор настраивает расписание созвонов. */
 export const STAFF_ROLES: Role[] = [Role.TEACHER, Role.MENTOR];
 
+/**
+ * Роли, доступные для самостоятельной публичной регистрации.
+ * Учителей/наставников/авторов заводит автор платформы (защита от эскалации привилегий).
+ */
+export const SELF_SIGNUP_ROLES: Role[] = [Role.STUDENT, Role.PARENT];
+
 export const ROLE_LABELS_RU: Record<Role, string> = {
   AUTHOR: "Автор платформы",
   TEACHER: "Учитель",

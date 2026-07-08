@@ -1,9 +1,16 @@
 import { Controller, Get, Param, Query } from "@nestjs/common";
+import { IsOptional, IsString } from "class-validator";
 import { Role } from "@edu/shared";
 import { Roles } from "../common/decorators/roles.decorator";
 import { CurrentUser, type AuthUser } from "../common/decorators/current-user.decorator";
 import { PaginationDto } from "../common/dto/pagination.dto";
 import { AnalyticsService } from "./analytics.service";
+
+/** Пагинация + фильтры лога действий. */
+class AuditQueryDto extends PaginationDto {
+  @IsOptional() @IsString() actorId?: string;
+  @IsOptional() @IsString() action?: string;
+}
 
 @Controller("analytics")
 export class AnalyticsController {
@@ -51,7 +58,7 @@ export class AnalyticsController {
   /** Лог действий (автор). */
   @Get("audit")
   @Roles(Role.AUTHOR)
-  audit(@Query() pagination: PaginationDto, @Query("actorId") actorId?: string, @Query("action") action?: string) {
-    return this.analytics.auditLog({ actorId, action, page: pagination.page, pageSize: pagination.pageSize });
+  audit(@Query() q: AuditQueryDto) {
+    return this.analytics.auditLog({ actorId: q.actorId, action: q.action, page: q.page, pageSize: q.pageSize });
   }
 }

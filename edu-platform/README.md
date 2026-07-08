@@ -79,7 +79,8 @@ pnpm --filter @edu/web dev            # http://localhost:3000
 
 ```bash
 pnpm --filter @edu/api test       # unit (RBAC-guard'ы)
-pnpm --filter @edu/api test:e2e   # e2e: полный сквозной сценарий по всем ролям
+pnpm --filter @edu/api test:e2e   # e2e: полный сквозной сценарий по всем ролям (21 тест)
+pnpm --filter @edu/web test:e2e   # Playwright UI-smoke (нужны запущенные API и web)
 ```
 
 e2e поднимает приложение против БД `edu_platform_test` и прогоняет сценарий:
@@ -93,4 +94,5 @@ e2e поднимает приложение против БД `edu_platform_test
 - [docs/ROLES.md](docs/ROLES.md) — роли и матрица прав
 - [docs/DATA_MODEL.md](docs/DATA_MODEL.md) — модель данных
 - [docs/API.md](docs/API.md) — справочник REST API
-- [docs/ROADMAP.md](docs/ROADMAP.md) — что дальше (оплата, видеозвонки, S3-загрузки)
+- [docs/SECURITY.md](docs/SECURITY.md) — меры безопасности
+- [docs/ROADMAP.md](docs/ROADMAP.md) — что дальше (оплата, видеозвонки, e-mail)

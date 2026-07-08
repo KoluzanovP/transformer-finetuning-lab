@@ -1,6 +1,7 @@
 import { INestApplication, ValidationPipe } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import request from "supertest";
+import * as bcrypt from "bcryptjs";
 import { AppModule } from "../src/app.module";
 import { PrismaService } from "../src/common/prisma/prisma.service";
 
@@ -18,7 +19,7 @@ describe("Образовательная платформа (e2e)", () => {
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
     app = moduleRef.createNestApplication();
     app.setGlobalPrefix("api");
-    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }));
     await app.init();
 
     prisma = app.get(PrismaService);
@@ -30,6 +31,7 @@ describe("Образовательная платформа (e2e)", () => {
     await app.close();
   });
 
+  // Публичная регистрация (разрешена только для STUDENT/PARENT).
   const register = async (email: string, role: string) => {
     const res = await http()
       .post("/api/auth/register")
@@ -38,22 +40,62 @@ describe("Образовательная платформа (e2e)", () => {
     return res.body;
   };
 
-  it("регистрирует пользователей всех ролей", async () => {
-    const author = await register("author@test.dev", "AUTHOR");
-    const teacher = await register("teacher@test.dev", "TEACHER");
-    const mentor = await register("mentor@test.dev", "MENTOR");
+  const login = async (email: string) => {
+    const res = await http()
+      .post("/api/auth/login")
+      .send({ email, password: "password123" })
+      .expect(201);
+    return res.body;
+  };
+
+  it("публичная регистрация не позволяет стать автором (эскалация)", async () => {
+    // Роль AUTHOR запрещена валидацией.
+    await http()
+      .post("/api/auth/register")
+      .send({ email: "hacker@test.dev", password: "password123", firstName: "Ha", lastName: "Ck", role: "AUTHOR" })
+      .expect(400);
+    // Даже без указания роли — публично выдаётся только STUDENT.
+    const anon = await register("anon@test.dev", "STUDENT");
+    expect(anon.user.roles).toEqual(["STUDENT"]);
+  });
+
+  it("создаёт пользователей всех ролей (bootstrap автора + инвайты)", async () => {
+    // Автор создаётся напрямую (bootstrap платформы), а не публичной регистрацией.
+    const authorUser = await prisma.user.create({
+      data: {
+        email: "author@test.dev",
+        passwordHash: await bcrypt.hash("password123", 12),
+        firstName: "Автор",
+        lastName: "Тест",
+        roles: ["AUTHOR"],
+      },
+    });
+    id.author = authorUser.id;
+    const author = await login("author@test.dev");
+    t.author = author.tokens.accessToken;
+
+    // Учителя и наставника заводит автор через POST /users.
+    const teacher = await http()
+      .post("/api/users")
+      .set("Authorization", `Bearer ${t.author}`)
+      .send({ email: "teacher@test.dev", password: "password123", firstName: "Учитель", lastName: "Тест", roles: ["TEACHER"] })
+      .expect(201);
+    id.teacher = teacher.body.id;
+    t.teacher = (await login("teacher@test.dev")).tokens.accessToken;
+
+    const mentor = await http()
+      .post("/api/users")
+      .set("Authorization", `Bearer ${t.author}`)
+      .send({ email: "mentor@test.dev", password: "password123", firstName: "Наставник", lastName: "Тест", roles: ["MENTOR"] })
+      .expect(201);
+    id.mentor = mentor.body.id;
+    t.mentor = (await login("mentor@test.dev")).tokens.accessToken;
+
+    // Ученик и родитель — публичная регистрация.
     const studentR = await register("student@test.dev", "STUDENT");
     const parent = await register("parent@test.dev", "PARENT");
-
-    t.author = author.tokens.accessToken;
-    t.teacher = teacher.tokens.accessToken;
-    t.mentor = mentor.tokens.accessToken;
     t.student = studentR.tokens.accessToken;
     t.parent = parent.tokens.accessToken;
-
-    id.author = author.user.id;
-    id.teacher = teacher.user.id;
-    id.mentor = mentor.user.id;
     id.student = studentR.user.id;
     id.parent = parent.user.id;
 
@@ -304,6 +346,40 @@ describe("Образовательная платформа (e2e)", () => {
       .expect(201);
     expect(uploaded.body.url).toContain("/uploads/");
     expect(uploaded.body.kind).toBe("IMAGE");
+  });
+
+  it("отвергает неизвестные поля в теле запроса (400)", async () => {
+    await http()
+      .post("/api/courses")
+      .set("Authorization", `Bearer ${t.author}`)
+      .send({ title: "Курс с лишним полем", evilField: true })
+      .expect(400);
+  });
+
+  it("refresh: ротация и запрет повторного использования токена", async () => {
+    const reg = await http()
+      .post("/api/auth/register")
+      .send({ email: "refresh@test.dev", password: "password123", firstName: "Ре", lastName: "Фреш", role: "STUDENT" })
+      .expect(201);
+    const oldRefresh = reg.body.tokens.refreshToken;
+
+    const rotated = await http()
+      .post("/api/auth/refresh")
+      .send({ refreshToken: oldRefresh })
+      .expect(201);
+    expect(rotated.body.tokens.refreshToken).not.toBe(oldRefresh);
+
+    // Повторное использование старого (отозванного) токена запрещено.
+    await http().post("/api/auth/refresh").send({ refreshToken: oldRefresh }).expect(401);
+    // Детект кражи сбрасывает и выданный новый токен.
+    await http().post("/api/auth/refresh").send({ refreshToken: rotated.body.tokens.refreshToken }).expect(401);
+  });
+
+  it("слабый пароль отклоняется при регистрации (400)", async () => {
+    await http()
+      .post("/api/auth/register")
+      .send({ email: "weak@test.dev", password: "onlyletters", firstName: "W", lastName: "K", role: "STUDENT" })
+      .expect(400);
   });
 
   it("родитель не может открыть сводку автора (403)", async () => {
