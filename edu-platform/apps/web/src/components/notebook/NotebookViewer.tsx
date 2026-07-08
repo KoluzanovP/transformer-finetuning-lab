@@ -3,6 +3,8 @@
 import { useState } from "react";
 import type { LessonBlock, LessonDocument, QuizBlock } from "@edu/shared";
 import { mediaUrl } from "@/lib/api";
+import { MarkdownMath } from "@/components/MarkdownMath";
+import { Diagram } from "./Diagram";
 
 export function NotebookViewer({ doc }: { doc: LessonDocument }) {
   if (!doc?.blocks?.length) {
@@ -24,7 +26,9 @@ function BlockView({ block }: { block: LessonBlock }) {
       return <Tag className="text-xl font-bold text-slate-900">{block.text}</Tag>;
     }
     case "MARKDOWN":
-      return <div className="whitespace-pre-wrap leading-relaxed text-slate-700">{block.markdown}</div>;
+      return <MarkdownMath>{block.markdown}</MarkdownMath>;
+    case "DIAGRAM":
+      return <Diagram svg={block.svg} caption={block.caption} />;
     case "IMAGE":
       return (
         <figure>
@@ -60,7 +64,9 @@ function BlockView({ block }: { block: LessonBlock }) {
         danger: "border-red-300 bg-red-50 text-red-900",
       };
       return (
-        <div className={`whitespace-pre-wrap rounded-lg border-l-4 p-3 ${colors[block.variant]}`}>{block.markdown}</div>
+        <div className={`rounded-lg border-l-4 p-3 ${colors[block.variant]}`}>
+          <MarkdownMath>{block.markdown}</MarkdownMath>
+        </div>
       );
     }
     case "QUIZ":
@@ -96,7 +102,9 @@ function QuizView({ block }: { block: QuizBlock }) {
 
   return (
     <div className="card">
-      <p className="mb-2 font-medium">{block.question}</p>
+      <div className="mb-2 font-medium">
+        <MarkdownMath>{block.question}</MarkdownMath>
+      </div>
       <div className="space-y-1">
         {block.options.map((o) => {
           const chosen = selected.includes(o.id);
@@ -116,7 +124,7 @@ function QuizView({ block }: { block: QuizBlock }) {
               }`}
             >
               <span className="text-slate-400">{block.multiple ? "☑" : "◯"}</span>
-              {o.text}
+              <span className="[&_p]:my-0"><MarkdownMath>{o.text}</MarkdownMath></span>
             </button>
           );
         })}
@@ -130,7 +138,7 @@ function QuizView({ block }: { block: QuizBlock }) {
           <span className={isCorrect ? "text-green-700" : "text-red-700"}>
             {isCorrect ? "Верно!" : "Есть ошибки."}
           </span>
-          {block.explanation && <p className="mt-1 text-slate-500">{block.explanation}</p>}
+          {block.explanation && <div className="mt-1 text-slate-500"><MarkdownMath>{block.explanation}</MarkdownMath></div>}
           <button className="btn-ghost ml-2 !py-1" onClick={() => { setChecked(false); setSelected([]); }}>
             Ещё раз
           </button>

@@ -60,6 +60,8 @@ function makeBlock(type: BlockType): LessonBlock {
       return { id: uid(), type: "CODE", language: "python", code: "" };
     case "CALLOUT":
       return { id: uid(), type: "CALLOUT", variant: "info", markdown: "" };
+    case "DIAGRAM":
+      return { id: uid(), type: "DIAGRAM", svg: "", caption: "" };
     case "QUIZ":
       return {
         id: uid(),
@@ -86,6 +88,7 @@ const PALETTE: { type: BlockType; label: string }[] = [
   { type: "AUDIO", label: "Аудио" },
   { type: "CODE", label: "Код" },
   { type: "CALLOUT", label: "Выноска" },
+  { type: "DIAGRAM", label: "Схема" },
   { type: "QUIZ", label: "Тест" },
   { type: "DIVIDER", label: "Разделитель" },
 ];
@@ -161,7 +164,19 @@ function CellEditor({ block, patch }: { block: LessonBlock; patch: (c: Partial<L
         </div>
       );
     case "MARKDOWN":
-      return <textarea className="input min-h-[100px]" value={block.markdown} onChange={(e) => patch({ markdown: e.target.value })} placeholder="Текст (Markdown)" />;
+      return (
+        <div className="space-y-1">
+          <textarea className="input min-h-[100px]" value={block.markdown} onChange={(e) => patch({ markdown: e.target.value })} placeholder="Текст (Markdown). Формулы: $x^2$ в строке или $$...$$ блоком." />
+          <p className="text-xs text-slate-400">Поддерживается Markdown и формулы KaTeX: <code>$a^2+b^2=c^2$</code>.</p>
+        </div>
+      );
+    case "DIAGRAM":
+      return (
+        <div className="space-y-2">
+          <textarea className="input min-h-[140px] font-mono text-xs" value={block.svg} onChange={(e) => patch({ svg: e.target.value })} placeholder="<svg viewBox='0 0 400 200'> ... </svg>" />
+          <input className="input" value={block.caption ?? ""} onChange={(e) => patch({ caption: e.target.value })} placeholder="Подпись к схеме" />
+        </div>
+      );
     case "IMAGE":
       return (
         <div className="space-y-2">

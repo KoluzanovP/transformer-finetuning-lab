@@ -21,6 +21,8 @@ export const BlockType = {
   CODE: "CODE",
   /** Выноска / callout (заметка, предупреждение). */
   CALLOUT: "CALLOUT",
+  /** Векторная схема/иллюстрация (инлайновый SVG). */
+  DIAGRAM: "DIAGRAM",
   /** Встраиваемый тест с вариантами (быстрая самопроверка). */
   QUIZ: "QUIZ",
   /**
@@ -85,6 +87,13 @@ export interface CalloutBlock extends BaseBlock {
   markdown: string;
 }
 
+export interface DiagramBlock extends BaseBlock {
+  type: "DIAGRAM";
+  /** Инлайновый SVG-код схемы. */
+  svg: string;
+  caption?: string;
+}
+
 export interface QuizOption {
   id: string;
   text: string;
@@ -116,6 +125,7 @@ export type LessonBlock =
   | AudioBlock
   | CodeBlock
   | CalloutBlock
+  | DiagramBlock
   | QuizBlock
   | HomeworkRefBlock
   | DividerBlock;
