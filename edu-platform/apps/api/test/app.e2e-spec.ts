@@ -382,6 +382,38 @@ describe("Образовательная платформа (e2e)", () => {
       .expect(400);
   });
 
+  it("авто-проверка теста выставляет балл", async () => {
+    const hw = await http()
+      .post(`/api/courses/${ctx.course}/homework`)
+      .set("Authorization", `Bearer ${t.author}`)
+      .send({
+        title: "Тест по арифметике",
+        content: {
+          version: 1,
+          blocks: [
+            { id: "tq1", type: "QUIZ", question: "2+2?", multiple: false, options: [{ id: "a", text: "3", correct: false }, { id: "b", text: "4", correct: true }] },
+            { id: "tq2", type: "QUIZ", question: "3+3?", multiple: false, options: [{ id: "c", text: "6", correct: true }, { id: "d", text: "7", correct: false }] },
+          ],
+        },
+      })
+      .expect(201);
+
+    const full = await http()
+      .post(`/api/submissions/homework/${hw.body.id}/autocheck`)
+      .set("Authorization", `Bearer ${t.student}`)
+      .send({ answers: { tq1: ["b"], tq2: ["c"] } })
+      .expect(201);
+    expect(full.body.scorePercent).toBe(100);
+    expect(full.body.correctCount).toBe(2);
+
+    const half = await http()
+      .post(`/api/submissions/homework/${hw.body.id}/autocheck`)
+      .set("Authorization", `Bearer ${t.student}`)
+      .send({ answers: { tq1: ["b"], tq2: ["d"] } })
+      .expect(201);
+    expect(half.body.scorePercent).toBe(50);
+  });
+
   it("родитель не может открыть сводку автора (403)", async () => {
     await http()
       .get("/api/analytics/overview")

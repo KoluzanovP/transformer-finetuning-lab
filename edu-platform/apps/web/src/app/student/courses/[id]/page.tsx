@@ -60,7 +60,12 @@ export default function StudentCoursePage({ params }: { params: { id: string } }
                   <li key={hw.id} className="card">
                     <p className="font-medium text-slate-800">{hw.title}</p>
                     {hw.description && <p className="mt-1 text-sm text-slate-500">{hw.description}</p>}
-                    <p className="mt-1 text-xs text-slate-400">Максимальный балл: {hw.maxScore}</p>
+                    <div className="mt-2 flex items-center justify-between">
+                      <span className="text-xs text-slate-400">Максимальный балл: {hw.maxScore}</span>
+                      <Link href={`/student/homework/${hw.id}`} className="btn-ghost !py-1 text-xs">
+                        Пройти тест →
+                      </Link>
+                    </div>
                   </li>
                 ))}
               </ul>

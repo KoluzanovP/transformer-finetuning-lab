@@ -10,9 +10,13 @@ import v1 from "./seeds/math-ege/variant1";
 import v2 from "./seeds/math-ege/variant2";
 import v3 from "./seeds/math-ege/variant3";
 import v4 from "./seeds/math-ege/variant4";
+import v5 from "./seeds/math-ege/variant5";
+import v6 from "./seeds/math-ege/variant6";
+import v7 from "./seeds/math-ege/variant7";
+import v8 from "./seeds/math-ege/variant8";
 
 const prisma = new PrismaClient();
-const variants: SeedModule[] = [v1, v2, v3, v4];
+const variants: SeedModule[] = [v1, v2, v3, v4, v5, v6, v7, v8];
 
 async function main() {
   console.log("Наполняю курс «ЕГЭ по математике: пробные варианты»…");

@@ -56,6 +56,72 @@ export class SubmissionsService {
     return submission;
   }
 
+  /**
+   * Авто-проверка теста: сверяет ответы ученика с правильными вариантами в
+   * QUIZ-блоках домашки, вычисляет балл (процент верных), сохраняет как
+   * проверенную сдачу (GRADED) и возвращает детальный результат.
+   */
+  async autoCheck(
+    studentId: string,
+    homeworkId: string,
+    answers: Record<string, string[]>,
+  ) {
+    const hw = await this.prisma.homework.findUnique({ where: { id: homeworkId } });
+    if (!hw) throw new NotFoundException("Домашнее задание не найдено");
+
+    const enrollment = await this.prisma.enrollment.findUnique({
+      where: { courseId_studentId: { courseId: hw.courseId, studentId } },
+    });
+    if (!enrollment) throw new ForbiddenException("Вы не зачислены на этот курс");
+
+    const content = hw.content as unknown as {
+      blocks?: Array<{ id: string; type: string; options?: Array<{ id: string; correct: boolean }> }>;
+    };
+    const quizzes = (content.blocks ?? []).filter((b) => b.type === "QUIZ" && b.options);
+    if (quizzes.length === 0) {
+      throw new BadRequestException("В этом задании нет тестовых вопросов");
+    }
+
+    const results = quizzes.map((q) => {
+      const correctIds = (q.options ?? []).filter((o) => o.correct).map((o) => o.id).sort();
+      const given = [...(answers[q.id] ?? [])].sort();
+      const isCorrect =
+        given.length === correctIds.length && given.every((id, i) => id === correctIds[i]);
+      return { blockId: q.id, correct: isCorrect, correctOptionIds: correctIds };
+    });
+
+    const correctCount = results.filter((r) => r.correct).length;
+    const total = quizzes.length;
+    const scorePercent = Math.round((correctCount / total) * 100);
+
+    await this.prisma.submission.upsert({
+      where: { homeworkId_studentId: { homeworkId, studentId } },
+      create: {
+        homeworkId,
+        studentId,
+        content: { version: 1, blocks: [] } as unknown as Prisma.InputJsonValue,
+        status: SubmissionStatus.GRADED,
+        score: scorePercent,
+        submittedAt: new Date(),
+        reviewedAt: new Date(),
+      },
+      update: {
+        status: SubmissionStatus.GRADED,
+        score: scorePercent,
+        submittedAt: new Date(),
+        reviewedAt: new Date(),
+      },
+    });
+
+    await this.notifications.notify(studentId, "submission.graded", {
+      homeworkId,
+      score: scorePercent,
+      auto: true,
+    });
+
+    return { scorePercent, correctCount, total, results };
+  }
+
   listForStudent(studentId: string) {
     return this.prisma.submission.findMany({
       where: { studentId },

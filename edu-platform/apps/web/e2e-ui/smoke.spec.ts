@@ -47,4 +47,22 @@ test.describe("EduPlatform UI smoke", () => {
     await expect(page.locator(".katex").first()).toBeVisible();
     await expect(page.locator("main svg").first()).toBeVisible();
   });
+
+  test("авто-проверяемый тест ЕГЭ выставляет балл", async ({ page }) => {
+    await page.goto("/login");
+    await page.locator("input[type=email]").fill("student@edu.dev");
+    await page.locator("input[type=password]").fill("password123");
+    await page.getByRole("button", { name: "Войти" }).click();
+    await expect(page).toHaveURL(/\/student/);
+
+    await page.getByText("ЕГЭ по математике: пробные варианты").first().click();
+    await expect(page).toHaveURL(/\/student\/courses\//);
+    await page.getByRole("link", { name: /Пройти тест/ }).first().click();
+    await expect(page).toHaveURL(/\/student\/homework\//);
+
+    // Отвечаем на первый вопрос и проверяем.
+    await page.locator(".card button").first().click();
+    await page.getByRole("button", { name: /Проверить/ }).click();
+    await expect(page.getByText(/%/).first()).toBeVisible();
+  });
 });

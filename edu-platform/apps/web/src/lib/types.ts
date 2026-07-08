@@ -34,6 +34,7 @@ export interface Homework {
   description?: string | null;
   maxScore: number;
   order: number;
+  content?: LessonDocument;
 }
 
 export interface Enrollment {

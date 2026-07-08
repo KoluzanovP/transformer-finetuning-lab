@@ -15,6 +15,11 @@ class ReviewDto {
   @IsOptional() @IsInt() @Min(0) score?: number;
 }
 
+class AutoCheckDto {
+  /** Ответы: { [id блока-теста]: [id выбранных вариантов] }. */
+  @IsObject() answers!: Record<string, string[]>;
+}
+
 @Controller("submissions")
 export class SubmissionsController {
   constructor(
@@ -36,6 +41,15 @@ export class SubmissionsController {
     const s = await this.submissions.upsertForStudent(user.id, homeworkId, dto.content, true);
     await this.audit.log({ actorId: user.id, action: "submission.submit", entityType: "Submission", entityId: s.id });
     return s;
+  }
+
+  /** Авто-проверяемый тест: сверка ответов и выставление балла. */
+  @Post("homework/:homeworkId/autocheck")
+  @Roles(Role.STUDENT)
+  async autoCheck(@Param("homeworkId") homeworkId: string, @Body() dto: AutoCheckDto, @CurrentUser() user: AuthUser) {
+    const res = await this.submissions.autoCheck(user.id, homeworkId, dto.answers);
+    await this.audit.log({ actorId: user.id, action: "submission.autocheck", entityType: "Homework", entityId: homeworkId, metadata: { score: res.scorePercent } });
+    return res;
   }
 
   @Get("mine")

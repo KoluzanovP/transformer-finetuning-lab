@@ -133,6 +133,12 @@ export function NotebookEditor({
           <div className="p-3">
             <CellEditor block={b} patch={(c) => patch(b.id, c)} />
           </div>
+          {["MARKDOWN", "CALLOUT", "DIAGRAM", "HEADING", "QUIZ"].includes(b.type) && (
+            <div className="border-t border-slate-100 bg-slate-50/70 px-3 py-2">
+              <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-400">Предпросмотр ячейки</p>
+              <NotebookViewer doc={{ version: 1, blocks: [b] }} />
+            </div>
+          )}
         </div>
       ))}
 
