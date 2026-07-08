@@ -9,8 +9,19 @@
 его публичному URL — это уже предусмотрено (CORS + переменная `NEXT_PUBLIC_API_URL`).
 
 > Репозиторий: `koluzanovp/edu-platform`. Проект лежит в корне репозитория,
-> поэтому **контекст сборки = корень**, а Dockerfile указываем как `apps/api/Dockerfile`
-> и `apps/web/Dockerfile`.
+> поэтому **контекст/корневую папку сборки оставляем `/`** (весь репозиторий,
+> чтобы Dockerfile видел `pnpm-workspace.yaml` и `packages/shared`), а Dockerfile
+> указываем как `apps/api/Dockerfile` и `apps/web/Dockerfile`.
+
+> **Актуальность (проверено, июль 2026).** App Platform поддерживает деплой по
+> Dockerfile из GitHub/GitLab/Bitbucket, сам поднимает reverse-proxy, бесплатный
+> технический домен `*.twc1.net` и HTTPS. Приложения общаются по публичным
+> адресам (приватных сетей между приложениями пока нет) — поэтому фронт и API —
+> два отдельных приложения, а связь между ними идёт по публичному URL API
+> (переменная `NEXT_PUBLIC_API_URL`) с настроенным CORS. В панели также есть типы
+> «Docker Compose» и «Docker Hub» — их можно использовать как альтернативу, но
+> ниже описан надёжный путь через два Dockerfile-приложения.
+> Док.: https://timeweb.cloud/docs/apps/deploying-with-dockerfile
 
 ---
 
