@@ -112,6 +112,7 @@ e2e поднимает приложение против БД `edu_platform_test
 - [docs/DATA_MODEL.md](docs/DATA_MODEL.md) — модель данных
 - [docs/API.md](docs/API.md) — справочник REST API
 - [docs/SECURITY.md](docs/SECURITY.md) — меры безопасности
-- [docs/DEPLOY_TIMEWEB_APPS.md](docs/DEPLOY_TIMEWEB_APPS.md) — деплой через веб-интерфейс (Apps + GitHub, без сервера)
-- [docs/DEPLOY_TIMEWEB.md](docs/DEPLOY_TIMEWEB.md) — развёртывание на своём сервере (VPS + Docker Compose)
+- [docs/DEPLOY_TIMEWEB_COMPOSE.md](docs/DEPLOY_TIMEWEB_COMPOSE.md) — **рекомендуемый** деплой: Timeweb App Platform, один стек Docker Compose из GitHub (с телефона)
+- [docs/DEPLOY_TIMEWEB_APPS.md](docs/DEPLOY_TIMEWEB_APPS.md) — альтернатива: два приложения по Dockerfile
+- [docs/DEPLOY_TIMEWEB.md](docs/DEPLOY_TIMEWEB.md) — свой сервер (VPS + Docker Compose)
 - [docs/ROADMAP.md](docs/ROADMAP.md) — что дальше (оплата, видеозвонки, e-mail)

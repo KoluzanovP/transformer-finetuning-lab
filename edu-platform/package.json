@@ -12,8 +12,8 @@
     "dev": "pnpm -r --parallel dev",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
-    "db:up": "docker compose up -d db",
-    "db:down": "docker compose down",
+    "db:up": "docker compose -f docker-compose.dev.yml up -d",
+    "db:down": "docker compose -f docker-compose.dev.yml down",
     "api": "pnpm --filter @edu/api",
     "web": "pnpm --filter @edu/web"
   },
