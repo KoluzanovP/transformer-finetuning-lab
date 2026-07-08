@@ -28,6 +28,23 @@ test.describe("EduPlatform UI smoke", () => {
     await page.getByRole("button", { name: "Войти" }).click();
 
     await expect(page).toHaveURL(/\/student/);
-    await expect(page.getByText("Основы Python").first()).toBeVisible();
+    await expect(page.getByText("Математика").first()).toBeVisible();
+  });
+
+  test("урок математики: формулы (KaTeX) и SVG-схемы отрисованы", async ({ page }) => {
+    await page.goto("/login");
+    await page.locator("input[type=email]").fill("student@edu.dev");
+    await page.locator("input[type=password]").fill("password123");
+    await page.getByRole("button", { name: "Войти" }).click();
+    await expect(page).toHaveURL(/\/student/);
+
+    await page.getByText("Математика: с нуля до ЕГЭ").first().click();
+    await expect(page).toHaveURL(/\/student\/courses\//);
+    await page.getByRole("link", { name: /1\.1/ }).first().click();
+    await expect(page).toHaveURL(/\/student\/lessons\//);
+
+    // Формула KaTeX и векторная схема должны отрендериться.
+    await expect(page.locator(".katex").first()).toBeVisible();
+    await expect(page.locator("main svg").first()).toBeVisible();
   });
 });
