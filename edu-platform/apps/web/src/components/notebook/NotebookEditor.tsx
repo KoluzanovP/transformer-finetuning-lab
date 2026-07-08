@@ -1,11 +1,41 @@
 "use client";
 
+import { useState } from "react";
 import type {
   BlockType,
   LessonBlock,
   LessonDocument,
   QuizBlock,
 } from "@edu/shared";
+import { uploadFile } from "@/lib/api";
+
+/** Кнопка загрузки файла на сервер (LOCAL/S3) с проставлением URL. */
+function UploadButton({ kind, onUploaded }: { kind: "IMAGE" | "VIDEO" | "AUDIO"; onUploaded: (url: string) => void }) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <label className={`btn-ghost cursor-pointer !py-1 text-xs ${busy ? "opacity-50" : ""}`}>
+      {busy ? "Загрузка…" : "Загрузить файл"}
+      <input
+        type="file"
+        className="hidden"
+        disabled={busy}
+        onChange={async (e) => {
+          const f = e.target.files?.[0];
+          if (!f) return;
+          setBusy(true);
+          try {
+            const res = await uploadFile(f, kind);
+            onUploaded(res.url);
+          } catch {
+            alert("Ошибка загрузки файла");
+          } finally {
+            setBusy(false);
+          }
+        }}
+      />
+    </label>
+  );
+}
 
 let counter = 0;
 function uid(): string {
@@ -135,7 +165,10 @@ function CellEditor({ block, patch }: { block: LessonBlock; patch: (c: Partial<L
     case "IMAGE":
       return (
         <div className="space-y-2">
-          <input className="input" value={block.url} onChange={(e) => patch({ url: e.target.value })} placeholder="URL изображения (S3/CDN)" />
+          <div className="flex gap-2">
+            <input className="input" value={block.url} onChange={(e) => patch({ url: e.target.value })} placeholder="URL изображения (S3/CDN)" />
+            <UploadButton kind="IMAGE" onUploaded={(url) => patch({ url })} />
+          </div>
           <input className="input" value={block.caption ?? ""} onChange={(e) => patch({ caption: e.target.value })} placeholder="Подпись (необязательно)" />
         </div>
       );
@@ -149,12 +182,18 @@ function CellEditor({ block, patch }: { block: LessonBlock; patch: (c: Partial<L
               <option value="VIMEO">Vimeo</option>
             </select>
             <input className="input" value={block.url} onChange={(e) => patch({ url: e.target.value })} placeholder="URL видео / embed" />
+            {block.provider === "FILE" && <UploadButton kind="VIDEO" onUploaded={(url) => patch({ url })} />}
           </div>
           <input className="input" value={block.caption ?? ""} onChange={(e) => patch({ caption: e.target.value })} placeholder="Подпись" />
         </div>
       );
     case "AUDIO":
-      return <input className="input" value={block.url} onChange={(e) => patch({ url: e.target.value })} placeholder="URL аудио" />;
+      return (
+        <div className="flex gap-2">
+          <input className="input" value={block.url} onChange={(e) => patch({ url: e.target.value })} placeholder="URL аудио" />
+          <UploadButton kind="AUDIO" onUploaded={(url) => patch({ url })} />
+        </div>
+      );
     case "CODE":
       return (
         <div className="space-y-2">

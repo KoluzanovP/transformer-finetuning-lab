@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Role, ROLE_LABELS_RU } from "@edu/shared";
 import { useAuth } from "@/lib/auth";
+import { NotificationBell } from "./NotificationBell";
 
 interface NavItem {
   href: string;
@@ -57,6 +58,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                 <span key={r} className="badge bg-brand-50 text-brand-700">{ROLE_LABELS_RU[r]}</span>
               ))}
             </span>
+            <NotificationBell />
             <button className="btn-ghost !py-1" onClick={() => logout().then(() => router.replace("/login"))}>
               Выйти
             </button>

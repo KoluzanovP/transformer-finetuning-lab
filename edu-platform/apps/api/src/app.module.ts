@@ -19,12 +19,14 @@ import { SchedulingModule } from "./scheduling/scheduling.module";
 import { TicketsModule } from "./tickets/tickets.module";
 import { MediaModule } from "./media/media.module";
 import { AnalyticsModule } from "./analytics/analytics.module";
+import { NotificationsModule } from "./notifications/notifications.module";
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, load: [configuration] }),
     PrismaModule,
     AuditModule,
+    NotificationsModule,
     AuthModule,
     UsersModule,
     CoursesModule,

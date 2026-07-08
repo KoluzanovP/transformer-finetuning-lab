@@ -7,6 +7,8 @@ import { ROLE_HOME } from "@edu/shared";
 import { useAuth } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
 
+const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+
 export default function LoginPage() {
   const { login } = useAuth();
   const router = useRouter();
@@ -45,6 +47,15 @@ export default function LoginPage() {
           </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
           <button className="btn-primary w-full" disabled={busy}>{busy ? "Вход…" : "Войти"}</button>
+
+          <div className="flex items-center gap-2 text-xs text-slate-400">
+            <span className="h-px flex-1 bg-slate-200" /> или <span className="h-px flex-1 bg-slate-200" />
+          </div>
+          <div className="flex gap-2">
+            <a className="btn-ghost flex-1" href={`${API}/api/auth/google/start`}>Google</a>
+            <a className="btn-ghost flex-1" href={`${API}/api/auth/vk/start`}>VK</a>
+          </div>
+
           <p className="text-center text-sm text-slate-500">
             Нет аккаунта? <Link href="/register" className="text-brand-600">Регистрация</Link>
           </p>

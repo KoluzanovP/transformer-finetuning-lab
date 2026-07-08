@@ -88,6 +88,29 @@ export const api = {
   delete: <T>(path: string) => raw<T>(path, { method: "DELETE" }),
 };
 
+/** Прямая multipart-загрузка файла (driver=LOCAL) → возвращает MediaAsset. */
+export async function uploadFile(file: File, kind: "IMAGE" | "VIDEO" | "AUDIO" | "FILE"): Promise<{ id: string; url: string; kind: string }> {
+  const form = new FormData();
+  form.append("file", file);
+  const headers = new Headers();
+  const access = tokenStore.access;
+  if (access) headers.set("Authorization", `Bearer ${access}`);
+  const res = await fetch(`${API_URL}/api/media/upload?kind=${kind}`, {
+    method: "POST",
+    headers,
+    body: form,
+  });
+  if (!res.ok) throw new ApiError(res.status, "Не удалось загрузить файл");
+  return res.json();
+}
+
+/** Абсолютный URL медиа: относительные /uploads/* дополняем адресом API. */
+export function mediaUrl(url: string): string {
+  if (!url) return url;
+  if (url.startsWith("http")) return url;
+  return `${API_URL}${url}`;
+}
+
 export const authApi = {
   async login(email: string, password: string): Promise<AuthResponse> {
     const data = await api.post<AuthResponse>("/auth/login", { email, password });

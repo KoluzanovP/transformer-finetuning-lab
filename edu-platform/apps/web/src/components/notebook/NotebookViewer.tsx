@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { LessonBlock, LessonDocument, QuizBlock } from "@edu/shared";
+import { mediaUrl } from "@/lib/api";
 
 export function NotebookViewer({ doc }: { doc: LessonDocument }) {
   if (!doc?.blocks?.length) {
@@ -28,7 +29,7 @@ function BlockView({ block }: { block: LessonBlock }) {
       return (
         <figure>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={block.url} alt={block.alt ?? ""} className="max-h-96 rounded-lg border border-slate-200" />
+          <img src={mediaUrl(block.url)} alt={block.alt ?? ""} className="max-h-96 rounded-lg border border-slate-200" />
           {block.caption && <figcaption className="mt-1 text-sm text-slate-500">{block.caption}</figcaption>}
         </figure>
       );
@@ -38,13 +39,13 @@ function BlockView({ block }: { block: LessonBlock }) {
           {block.provider === "YOUTUBE" ? (
             <iframe className="aspect-video w-full rounded-lg" src={block.url} allowFullScreen title="video" />
           ) : (
-            <video controls src={block.url} className="w-full rounded-lg border border-slate-200" />
+            <video controls src={mediaUrl(block.url)} className="w-full rounded-lg border border-slate-200" />
           )}
           {block.caption && <p className="mt-1 text-sm text-slate-500">{block.caption}</p>}
         </div>
       );
     case "AUDIO":
-      return <audio controls src={block.url} className="w-full" />;
+      return <audio controls src={mediaUrl(block.url)} className="w-full" />;
     case "CODE":
       return (
         <pre className="overflow-x-auto rounded-lg bg-slate-900 p-4 text-sm text-slate-100">

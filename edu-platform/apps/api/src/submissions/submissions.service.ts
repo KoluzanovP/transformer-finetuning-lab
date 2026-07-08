@@ -7,10 +7,14 @@ import {
 import type { Prisma, Submission } from "@prisma/client";
 import { SubmissionStatus, type LessonDocument } from "@edu/shared";
 import { PrismaService } from "../common/prisma/prisma.service";
+import { NotificationsService } from "../notifications/notifications.service";
 
 @Injectable()
 export class SubmissionsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   /** Ученик сохраняет/отправляет ответ. submit=true переводит в SUBMITTED. */
   async upsertForStudent(studentId: string, homeworkId: string, content: LessonDocument, submit: boolean): Promise<Submission> {
@@ -24,7 +28,7 @@ export class SubmissionsService {
     if (!enrollment) throw new ForbiddenException("Вы не зачислены на этот курс");
 
     const status = submit ? SubmissionStatus.SUBMITTED : SubmissionStatus.DRAFT;
-    return this.prisma.submission.upsert({
+    const submission = await this.prisma.submission.upsert({
       where: { homeworkId_studentId: { homeworkId, studentId } },
       create: {
         homeworkId,
@@ -39,6 +43,17 @@ export class SubmissionsService {
         submittedAt: submit ? new Date() : undefined,
       },
     });
+
+    // Уведомляем закреплённого учителя о новой сдаче.
+    if (submit && enrollment.teacherId) {
+      await this.notifications.notify(enrollment.teacherId, "submission.submitted", {
+        submissionId: submission.id,
+        homeworkId,
+        homeworkTitle: hw.title,
+        studentId,
+      });
+    }
+    return submission;
   }
 
   listForStudent(studentId: string) {
@@ -106,7 +121,7 @@ export class SubmissionsService {
       }
     }
 
-    return this.prisma.submission.update({
+    const updated = await this.prisma.submission.update({
       where: { id: submissionId },
       data: {
         status: dto.status,
@@ -115,5 +130,12 @@ export class SubmissionsService {
         reviewedAt: new Date(),
       },
     });
+
+    await this.notifications.notify(
+      updated.studentId,
+      dto.status === SubmissionStatus.GRADED ? "submission.graded" : "submission.returned",
+      { submissionId: updated.id, homeworkId: updated.homeworkId, score: updated.score },
+    );
+    return updated;
   }
 }

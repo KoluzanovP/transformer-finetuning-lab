@@ -242,6 +242,70 @@ describe("Образовательная платформа (e2e)", () => {
     expect(audit.body.total).toBeGreaterThan(0);
   });
 
+  it("уведомления приходят учителю и ученику", async () => {
+    const teacherNotifs = await http()
+      .get("/api/notifications")
+      .set("Authorization", `Bearer ${t.teacher}`)
+      .expect(200);
+    expect(teacherNotifs.body.some((n: { type: string }) => n.type === "submission.submitted")).toBe(true);
+
+    const studentNotifs = await http()
+      .get("/api/notifications")
+      .set("Authorization", `Bearer ${t.student}`)
+      .expect(200);
+    expect(studentNotifs.body.some((n: { type: string }) => n.type === "submission.graded")).toBe(true);
+
+    const count = await http()
+      .get("/api/notifications/unread-count")
+      .set("Authorization", `Bearer ${t.student}`)
+      .expect(200);
+    expect(count.body.count).toBeGreaterThan(0);
+  });
+
+  it("OAuth (mock) создаёт пользователя и выдаёт токены", async () => {
+    const res = await http()
+      .post("/api/auth/oauth/mock")
+      .send({ provider: "google", providerId: "g-123", email: "oauth-user@test.dev", firstName: "Гость", lastName: "Гуглов" })
+      .expect(201);
+    expect(res.body.user.email).toBe("oauth-user@test.dev");
+    expect(res.body.user.roles).toContain("STUDENT");
+    expect(res.body.tokens.accessToken).toBeDefined();
+
+    // Повторный вход тем же провайдером — тот же пользователь.
+    const again = await http()
+      .post("/api/auth/oauth/mock")
+      .send({ provider: "google", providerId: "g-123", email: "oauth-user@test.dev" })
+      .expect(201);
+    expect(again.body.user.id).toBe(res.body.user.id);
+  });
+
+  it("генерация слотов созвонов из расписания", async () => {
+    const res = await http()
+      .post(`/api/staff/${id.teacher}/generate-slots`)
+      .set("Authorization", `Bearer ${t.author}`)
+      .send({ weeks: 2, durationMinutes: 30 })
+      .expect(201);
+    expect(res.body.created).toBeGreaterThanOrEqual(1);
+  });
+
+  it("медиа: upload-target (LOCAL) и реальная загрузка файла", async () => {
+    const target = await http()
+      .post("/api/media/upload-target")
+      .set("Authorization", `Bearer ${t.author}`)
+      .send({ filename: "cover.png", kind: "IMAGE" })
+      .expect(201);
+    expect(target.body.driver).toBe("LOCAL");
+    expect(target.body.uploadUrl).toBe("/api/media/upload");
+
+    const uploaded = await http()
+      .post("/api/media/upload?kind=IMAGE")
+      .set("Authorization", `Bearer ${t.author}`)
+      .attach("file", Buffer.from("fake-png-bytes"), "cover.png")
+      .expect(201);
+    expect(uploaded.body.url).toContain("/uploads/");
+    expect(uploaded.body.kind).toBe("IMAGE");
+  });
+
   it("родитель не может открыть сводку автора (403)", async () => {
     await http()
       .get("/api/analytics/overview")

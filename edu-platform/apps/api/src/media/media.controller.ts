@@ -1,10 +1,22 @@
-import { Body, Controller, Delete, Get, Param, Post } from "@nestjs/common";
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Query,
+  UploadedFile,
+  UseInterceptors,
+} from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
 import { IsIn, IsInt, IsOptional, IsString } from "class-validator";
 import type { MediaKind } from "@prisma/client";
 import { Role } from "@edu/shared";
 import { Roles } from "../common/decorators/roles.decorator";
 import { CurrentUser, type AuthUser } from "../common/decorators/current-user.decorator";
-import { MediaService } from "./media.service";
+import { MediaService, type UploadedFile as MulterFile } from "./media.service";
 
 /** Допустимые виды медиа (совместимы с Prisma enum MediaKind). */
 const MEDIA_KINDS = ["IMAGE", "VIDEO", "AUDIO", "FILE"] as const;
@@ -34,11 +46,24 @@ export class MediaController {
     return this.media.register(user.id, dto);
   }
 
-  /** Возвращает цель для загрузки (presign-style). */
+  /** Возвращает цель для загрузки: presigned URL (S3) или эндпоинт (LOCAL). */
   @Post("upload-target")
   @Roles(Role.AUTHOR, Role.TEACHER)
   createUploadTarget(@Body() dto: UploadTargetDto, @CurrentUser() user: AuthUser) {
     return this.media.createUploadTarget(user.id, dto);
+  }
+
+  /** Прямая multipart-загрузка файла (driver=LOCAL). Поле формы: file. */
+  @Post("upload")
+  @Roles(Role.AUTHOR, Role.TEACHER)
+  @UseInterceptors(FileInterceptor("file", { limits: { fileSize: 200 * 1024 * 1024 } }))
+  async upload(
+    @UploadedFile() file: MulterFile | undefined,
+    @Query("kind") kind: MediaKind = "FILE",
+    @CurrentUser() user: AuthUser,
+  ) {
+    if (!file) throw new BadRequestException("Файл не передан (поле form-data: file)");
+    return this.media.saveLocalFile(user.id, kind, file);
   }
 
   /** Медиа-файлы текущего пользователя. */

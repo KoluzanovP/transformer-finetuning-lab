@@ -2,10 +2,14 @@ import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/commo
 import { Role, TicketStatus } from "@edu/shared";
 import { PrismaService } from "../common/prisma/prisma.service";
 import type { AuthUser } from "../common/decorators/current-user.decorator";
+import { NotificationsService } from "../notifications/notifications.service";
 
 @Injectable()
 export class TicketsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   /** Ученик создаёт обращение в поддержку с первым сообщением. */
   create(createdById: string, dto: { subject: string; body: string }) {
@@ -102,6 +106,12 @@ export class TicketsService {
         ? { mentorId: user.id, status: TicketStatus.IN_PROGRESS }
         : { updatedAt: new Date() },
     });
+
+    // Уведомляем вторую сторону об ответе.
+    const recipient = user.id === ticket.createdById ? ticket.mentorId : ticket.createdById;
+    if (recipient) {
+      await this.notifications.notify(recipient, "ticket.reply", { ticketId: id });
+    }
 
     return message;
   }

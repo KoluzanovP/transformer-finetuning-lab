@@ -36,6 +36,11 @@ class BookDto {
   @IsString() courseId!: string;
 }
 
+class GenerateSlotsDto {
+  @IsInt() @Min(1) @Max(12) weeks!: number;
+  @IsOptional() @IsInt() @Min(5) durationMinutes?: number;
+}
+
 class CompleteDto {
   @IsOptional() @IsString() notes?: string;
 }
@@ -70,6 +75,16 @@ export class SchedulingController {
     const call = await this.scheduling.createSlot(teacherId, dto);
     await this.audit.log({ actorId: user.id, action: "call.createSlot", entityType: "Call", entityId: call.id });
     return call;
+  }
+
+  /** Сгенерировать слоты из расписания: автор — для любого, преподаватель — для себя. */
+  @Post("staff/:staffId/generate-slots")
+  @Roles(Role.AUTHOR, Role.TEACHER, Role.MENTOR)
+  async generateSlots(@Param("staffId") staffId: string, @Body() dto: GenerateSlotsDto, @CurrentUser() user: AuthUser) {
+    const target = user.roles.includes(Role.AUTHOR) ? staffId : user.id;
+    const res = await this.scheduling.generateSlots(target, dto.weeks, dto.durationMinutes);
+    await this.audit.log({ actorId: user.id, action: "schedule.generateSlots", entityType: "User", entityId: target, metadata: { ...res } });
+    return res;
   }
 
   @Get("calls/teaching")

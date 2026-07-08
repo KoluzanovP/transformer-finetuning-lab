@@ -7,6 +7,7 @@ import {
 import type { AvailabilityRule, Call } from "@prisma/client";
 import { CallStatus, Role } from "@edu/shared";
 import { PrismaService } from "../common/prisma/prisma.service";
+import { NotificationsService } from "../notifications/notifications.service";
 
 interface RuleInput {
   weekday: number;
@@ -16,7 +17,10 @@ interface RuleInput {
 
 @Injectable()
 export class SchedulingService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   // -------- Доступность (настраивает автор для учителя/наставника) --------
 
@@ -110,7 +114,7 @@ export class SchedulingService {
         data: { callsUsed: { increment: 1 } },
       });
 
-      return tx.call.update({
+      const updated = await tx.call.update({
         where: { id: callId },
         data: {
           status: CallStatus.BOOKED,
@@ -119,7 +123,53 @@ export class SchedulingService {
           joinUrl: `https://meet.example.com/edu/${callId}`,
         },
       });
+      return updated;
+    }).then(async (updated) => {
+      await this.notifications.notify(updated.teacherId, "call.booked", {
+        callId: updated.id,
+        studentId,
+        startsAt: updated.startsAt,
+      });
+      return updated;
     });
+  }
+
+  /**
+   * Сгенерировать слоты созвонов из правил доступности сотрудника на N недель
+   * вперёд. Уже существующие слоты на те же времена не дублируются.
+   */
+  async generateSlots(staffId: string, weeks: number, durationMinutes = 30): Promise<{ created: number }> {
+    await this.assertStaff(staffId);
+    const rules = await this.prisma.availabilityRule.findMany({ where: { staffId } });
+    if (!rules.length) return { created: 0 };
+
+    const now = new Date();
+    const startOfDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const candidates: Date[] = [];
+
+    for (let day = 0; day < weeks * 7; day += 1) {
+      const date = new Date(startOfDay);
+      date.setUTCDate(startOfDay.getUTCDate() + day);
+      const weekday = date.getUTCDay();
+      for (const rule of rules.filter((r) => r.weekday === weekday)) {
+        for (let m = rule.startMinute; m + durationMinutes <= rule.endMinute; m += durationMinutes) {
+          const slot = new Date(date);
+          slot.setUTCMinutes(m);
+          if (slot > now) candidates.push(new Date(slot));
+        }
+      }
+    }
+
+    let created = 0;
+    for (const startsAt of candidates) {
+      const exists = await this.prisma.call.findFirst({ where: { teacherId: staffId, startsAt } });
+      if (exists) continue;
+      await this.prisma.call.create({
+        data: { teacherId: staffId, startsAt, durationMinutes, status: CallStatus.AVAILABLE },
+      });
+      created += 1;
+    }
+    return { created };
   }
 
   /** Отмена брони (учеником или учителем): слот снова свободен, квота возвращается. */
