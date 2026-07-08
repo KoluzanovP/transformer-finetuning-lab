@@ -21,6 +21,7 @@ import { TicketsModule } from "./tickets/tickets.module";
 import { MediaModule } from "./media/media.module";
 import { AnalyticsModule } from "./analytics/analytics.module";
 import { NotificationsModule } from "./notifications/notifications.module";
+import { HealthModule } from "./health/health.module";
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { NotificationsModule } from "./notifications/notifications.module";
     TicketsModule,
     MediaModule,
     AnalyticsModule,
+    HealthModule,
   ],
   providers: [
     // Глобально: rate-limit → аутентификация (JWT) → проверка ролей.

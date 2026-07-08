@@ -103,6 +103,12 @@ describe("Образовательная платформа (e2e)", () => {
     expect(author.tokens.refreshToken).toBeDefined();
   });
 
+  it("health-check доступен без авторизации", async () => {
+    const res = await http().get("/api/health").expect(200);
+    expect(res.body.status).toBe("ok");
+    expect(res.body.db).toBe("ok");
+  });
+
   it("логинит по email/паролю и отдаёт /me", async () => {
     const login = await http()
       .post("/api/auth/login")

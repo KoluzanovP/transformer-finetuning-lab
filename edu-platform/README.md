@@ -112,4 +112,5 @@ e2e поднимает приложение против БД `edu_platform_test
 - [docs/DATA_MODEL.md](docs/DATA_MODEL.md) — модель данных
 - [docs/API.md](docs/API.md) — справочник REST API
 - [docs/SECURITY.md](docs/SECURITY.md) — меры безопасности
+- [docs/DEPLOY_TIMEWEB.md](docs/DEPLOY_TIMEWEB.md) — пошаговое развёртывание на Timeweb Cloud
 - [docs/ROADMAP.md](docs/ROADMAP.md) — что дальше (оплата, видеозвонки, e-mail)
