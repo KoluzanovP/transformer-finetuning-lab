@@ -1,15 +1,18 @@
-/* Простой сервис-воркер: сеть с откатом в кэш для офлайн-доступа. */
-const CACHE = "edu-shell-v1";
+/* Безопасный сервис-воркер: перехватываем ТОЛЬКО навигации (HTML-страницы).
+ * JS/CSS/ассеты и запросы к /api не трогаем — их обрабатывает браузер напрямую,
+ * чтобы исключить рассинхрон версий и «белый экран» после передеплоя. */
+const CACHE = "edu-shell-v2";
 
 self.addEventListener("install", () => {
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
+  // Чистим ВСЕ прежние кэши (в т.ч. сломанные от старых сборок).
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
       .then(() => self.clients.claim()),
   );
 });
@@ -17,18 +20,16 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
-
-  const url = new URL(req.url);
-  // Кэшируем только свои ресурсы (не API и не сторонние домены).
-  if (url.origin !== self.location.origin) return;
+  // Только переходы по страницам; ассеты и API — мимо воркера.
+  if (req.mode !== "navigate") return;
 
   event.respondWith(
     fetch(req)
       .then((res) => {
         const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+        caches.open(CACHE).then((c) => c.put("/", copy)).catch(() => {});
         return res;
       })
-      .catch(() => caches.match(req).then((cached) => cached || caches.match("/"))),
+      .catch(() => caches.match("/")),
   );
 });
