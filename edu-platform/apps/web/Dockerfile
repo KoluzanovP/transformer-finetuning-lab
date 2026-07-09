@@ -17,5 +17,5 @@ FROM base AS runtime
 ENV NODE_ENV=production
 COPY --from=build /app /app
 WORKDIR /app/apps/web
-EXPOSE 3000
+# Без EXPOSE: сервис внутренний, публичный вход — только nginx.
 CMD ["pnpm", "exec", "next", "start", "-p", "3000"]

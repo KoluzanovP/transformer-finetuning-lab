@@ -16,6 +16,6 @@ FROM base AS runtime
 ENV NODE_ENV=production
 COPY --from=build /app /app
 WORKDIR /app/apps/api
-EXPOSE 4000
+# Без EXPOSE: сервис внутренний, публичный вход — только nginx.
 # На старте применяем миграции, затем запускаем сервер.
 CMD ["sh", "-c", "pnpm exec prisma migrate deploy && node dist/apps/api/src/main.js"]

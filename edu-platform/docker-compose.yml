@@ -42,8 +42,6 @@ services:
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       VK_CLIENT_ID: ${VK_CLIENT_ID:-}
       VK_CLIENT_SECRET: ${VK_CLIENT_SECRET:-}
-    expose:
-      - "4000"
 
   web:
     build:
@@ -53,18 +51,19 @@ services:
         # Пусто = фронт обращается к тому же домену (/api), что и открыт в браузере.
         NEXT_PUBLIC_API_URL: ""
     restart: always
-    expose:
-      - "3000"
     depends_on:
       - api
 
+  # Единственный публичный сервис. App Platform сам поднимает внешний reverse-proxy
+  # и маршрутизирует на порт из EXPOSE (80) — публиковать host-порт (ports) НЕ нужно,
+  # иначе конфликт «port is already allocated».
   nginx:
     build:
       context: .
       dockerfile: deploy/nginx.Dockerfile
     restart: always
-    ports:
-      - "80:80"
+    expose:
+      - "80"
     depends_on:
       - web
       - api
