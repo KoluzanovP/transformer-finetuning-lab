@@ -54,16 +54,15 @@ services:
     depends_on:
       - api
 
-  # Единственный публичный сервис. App Platform сам поднимает внешний reverse-proxy
-  # и маршрутизирует на порт из EXPOSE (80) — публиковать host-порт (ports) НЕ нужно,
-  # иначе конфликт «port is already allocated».
+  # Единственный публичный сервис. App Platform проксирует внешние 80/443 на порт
+  # 8080 (его порт по умолчанию). Публикуем 8080 (НЕ 80 — 80 занят прокси платформы).
   nginx:
     build:
       context: .
       dockerfile: deploy/nginx.Dockerfile
     restart: always
-    expose:
-      - "80"
+    ports:
+      - "8080:8080"
     depends_on:
       - web
       - api
