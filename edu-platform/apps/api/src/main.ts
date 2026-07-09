@@ -29,6 +29,13 @@ async function bootstrap(): Promise<void> {
   const config = app.get(ConfigService);
   assertProductionSecrets(config);
 
+  // Диагностика: логируем каждый входящий запрос (метод + путь).
+  const httpLogger = new Logger("HTTP");
+  app.use((req: { method: string; originalUrl: string }, _res: unknown, next: () => void) => {
+    httpLogger.log(`${req.method} ${req.originalUrl}`);
+    next();
+  });
+
   // Безопасные заголовки. crossOriginResourcePolicy=cross-origin — чтобы фронт
   // мог загружать медиа из /uploads.
   app.use(

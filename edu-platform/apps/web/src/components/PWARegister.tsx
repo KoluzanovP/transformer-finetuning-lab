@@ -2,13 +2,19 @@
 
 import { useEffect } from "react";
 
-/** Регистрирует сервис-воркер для офлайн-доступа и установки как приложение. */
+/**
+ * PWA временно отключён. Компонент активно удаляет ранее установленный
+ * сервис-воркер и чистит кэши, чтобы исключить «белый экран» из-за старого кэша.
+ */
 export function PWARegister() {
   useEffect(() => {
-    if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => {
-        /* офлайн-режим необязателен */
-      });
+    if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+    navigator.serviceWorker
+      .getRegistrations()
+      .then((regs) => regs.forEach((r) => r.unregister()))
+      .catch(() => {});
+    if (typeof caches !== "undefined") {
+      caches.keys().then((keys) => keys.forEach((k) => caches.delete(k))).catch(() => {});
     }
   }, []);
   return null;
