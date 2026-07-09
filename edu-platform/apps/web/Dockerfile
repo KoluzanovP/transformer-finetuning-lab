@@ -17,5 +17,6 @@ FROM base AS runtime
 ENV NODE_ENV=production
 COPY --from=build /app /app
 WORKDIR /app/apps/web
-# Без EXPOSE: сервис внутренний, публичный вход — только nginx.
-CMD ["pnpm", "exec", "next", "start", "-p", "3000"]
+# Публичный сервис. App Platform по умолчанию проксирует внешние 80/443 на 8080.
+EXPOSE 8080
+CMD ["pnpm", "exec", "next", "start", "-p", "8080"]

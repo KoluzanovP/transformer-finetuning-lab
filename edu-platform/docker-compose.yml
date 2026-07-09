@@ -1,14 +1,13 @@
-# Деплой всего сервиса одним стеком (Timeweb App Platform → тип «Docker Compose»,
-# либо `docker compose up -d --build` на своём сервере).
+# Деплой всего сервиса (Timeweb App Platform → тип «Docker Compose», либо
+# `docker compose up -d --build` на своём сервере).
 #
-# Единый публичный вход — nginx (порт 80). Внутри он проксирует:
-#   /api и /uploads → сервис api (NestJS, :4000)
-#   всё остальное   → сервис web (Next.js, :3000)
-# Фронт и API на одном домене — CORS не нужен, адрес API знать заранее не требуется.
+# ОДИН публичный сервис — web (Next.js, :8080). Он сам проксирует /api и /uploads
+# во внутренний сервис api (см. apps/web/next.config.mjs → rewrites). Фронт и API
+# на одном домене → CORS не нужен, отдельный nginx не нужен.
 #
-# База данных — УПРАВЛЯЕМАЯ (Timeweb Databases): укажите DATABASE_URL.
+# База данных — УПРАВЛЯЕМАЯ (Timeweb Databases): укажите DATABASE_URL (публичный хост).
 # Медиа — S3 (Timeweb S3): STORAGE_DRIVER=S3 + S3_*.
-# Переменные задаются в панели App Platform (или в файле .env рядом на сервере).
+# Переменные задаются в панели App Platform (или в .env рядом на сервере).
 
 services:
   api:
@@ -48,21 +47,12 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        # Пусто = фронт обращается к тому же домену (/api), что и открыт в браузере.
+        # Пусто = браузер обращается к тому же домену (/api), запросы проксирует Next.
         NEXT_PUBLIC_API_URL: ""
     restart: always
-    depends_on:
-      - api
-
-  # Единственный публичный сервис. App Platform проксирует внешние 80/443 на порт
-  # 8080 (его порт по умолчанию). Публикуем 8080 (НЕ 80 — 80 занят прокси платформы).
-  nginx:
-    build:
-      context: .
-      dockerfile: deploy/nginx.Dockerfile
-    restart: always
+    environment:
+      API_INTERNAL_URL: http://api:4000
     ports:
       - "8080:8080"
     depends_on:
-      - web
       - api
