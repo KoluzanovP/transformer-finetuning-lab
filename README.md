@@ -1,19 +1,16 @@
 # Transformer Fine-Tuning Lab
 
-A compact, end-to-end lab for **fine-tuning a transformer on a text-classification
-task**. It fine-tunes [DistilBERT](https://huggingface.co/distilbert-base-uncased)
-on the [`emotion`](https://huggingface.co/datasets/emotion) dataset (6-way emotion
-classification of English tweets) and compares three strategies:
+Fine-tunes [DistilBERT](https://huggingface.co/distilbert-base-uncased) on the
+[`emotion`](https://huggingface.co/datasets/emotion) dataset (6-way emotion classification
+of English tweets) and compares three strategies:
 
-1. **Frozen encoder** — train only the classification head (linear probe).
-2. **Full fine-tuning** — update all model parameters.
-3. **LoRA** — parameter-efficient fine-tuning with low-rank adapters (PEFT).
+1. Frozen encoder: train only the classification head (linear probe).
+2. Full fine-tuning: update every model parameter.
+3. LoRA: parameter-efficient fine-tuning with low-rank adapters (PEFT).
 
-The repo intentionally ships **two training paths** — a high-level Hugging Face
-`Trainer` and a hand-written PyTorch loop — plus experiment tracking,
-embedding visualization, and a FastAPI inference service.
-
----
+The repo ships two training paths, a Hugging Face `Trainer` and a hand-written PyTorch
+loop, so the same experiment can be run either way. There is also experiment tracking,
+embedding visualization and a FastAPI inference service.
 
 ## Architecture
 
@@ -58,27 +55,21 @@ transformer-finetuning-lab/
 └── notebooks/                 # executed example notebooks
 ```
 
----
-
 ## Results
 
-Fine-tuned `distilbert-base-uncased` on the `emotion` dataset (16k train /
-2k validation / 2k test), 3 epochs, batch size 32, learning rate 2e-5, seed 42.
-Metrics reported on the **test** split.
+`distilbert-base-uncased` on the `emotion` dataset (16k train / 2k validation / 2k test),
+3 epochs, batch size 32, learning rate 2e-5, seed 42. Metrics are on the test split.
 
 | Approach          | Trainable params | Total params | Test Accuracy | Test F1 (weighted) |
 |-------------------|-----------------:|-------------:|--------------:|-------------------:|
 | Frozen encoder    | 0.60M            | 67.0M        | 0.782         | 0.771              |
-| **Full fine-tune**| 67.0M            | 67.0M        | **0.912**     | **0.910**          |
+| Full fine-tune    | 67.0M            | 67.0M        | 0.912         | 0.910              |
 | LoRA (r=8)        | 0.74M            | 67.7M        | 0.903         | 0.901              |
 
-**Takeaways**
-
-- Full fine-tuning gives the best accuracy but updates **all 67M** parameters.
-- **LoRA reaches within ~1 point of full fine-tuning while training ~1.1% of the
-  parameters** (0.74M vs 67M) — the most attractive cost/quality trade-off.
-- The frozen baseline (linear probe) trails by ~13 points, showing that adapting
-  the encoder matters for this task.
+Full fine-tuning wins on accuracy, but it updates all 67M parameters. LoRA lands about a
+point below it while training 0.74M parameters, roughly 1.1% of the model, which is the
+better trade-off in most situations. The linear probe trails by about 13 points, so
+adapting the encoder does matter on this task.
 
 Per-class performance (full fine-tuning, test split):
 
@@ -97,11 +88,9 @@ Per-class performance (full fine-tuning, test split):
 weighted avg       0.91      0.91      0.91      2000
 ```
 
-The rarer classes (`love`, `surprise`) are hardest, consistent with their low
-support — a class-imbalance signal visible in the embedding plot
+The rare classes (`love`, `surprise`) are the hardest, which matches their low support.
+The same imbalance is visible in the embedding plot
 (`notebooks/02_embedding_analysis.ipynb`).
-
----
 
 ## Setup
 
@@ -122,8 +111,6 @@ pip install -r requirements.txt
 copy .env.example .env          # Windows
 # cp .env.example .env          # Linux / macOS
 ```
-
----
 
 ## Usage
 
@@ -176,18 +163,15 @@ docker build -t finetuning-lab .
 docker run -p 8000:8000 -e MODEL_DIR=/app/artifacts/full_finetune finetuning-lab
 ```
 
----
-
 ## Notebooks
 
-- `notebooks/01_finetune_and_eval.ipynb` — load + tokenize the data, train,
-  inspect per-epoch progression, the final `classification_report`, and the
-  three-way comparison table.
-- `notebooks/02_embedding_analysis.ipynb` — extract `[CLS]` embeddings and
-  project them to 2D with UMAP to inspect class separation.
+`notebooks/01_finetune_and_eval.ipynb` loads and tokenizes the data, trains, and shows the
+per-epoch progression, the final `classification_report` and the three-way comparison
+table.
 
----
+`notebooks/02_embedding_analysis.ipynb` extracts `[CLS]` embeddings and projects them to 2D
+with UMAP to inspect class separation.
 
 ## License
 
-MIT — for educational / portfolio use.
+MIT. Educational / portfolio use.
